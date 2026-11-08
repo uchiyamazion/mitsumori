@@ -1,0 +1,93 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>見積作成</title>
+<style>
+:root{--bg:#f3f4f7;--cd:#fff;--tx:#1c2230;--mu:#6b7385;--bd:#d6dbe4;--ac:#1d5fc4;--in:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13161c;--cd:#1d212a;--tx:#e6e9ef;--mu:#98a1b3;--bd:#363d4b;--ac:#6fa4f7;--in:#151922}}
+:root[data-theme="dark"]{--bg:#13161c;--cd:#1d212a;--tx:#e6e9ef;--mu:#98a1b3;--bd:#363d4b;--ac:#6fa4f7;--in:#151922}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif}
+.wrap{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:14px;padding:12px;max-width:1500px;margin:auto;align-items:start}
+@media(max-width:920px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 8px}h3{font-size:13px;margin:12px 0 4px;color:var(--mu)}
+input,select,textarea,button{font:inherit;color:var(--tx);background:var(--in);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;min-width:0}
+input,select,textarea{width:100%}button{cursor:pointer;width:auto}.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+label{display:block;font-size:12px;color:var(--mu)}label input,label textarea,label select{margin-top:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.tb{display:flex;gap:6px;flex-wrap:wrap}.tb select{flex:1 1 140px;width:auto}
+.ck{display:flex;gap:6px;align-items:center;color:var(--tx);font-size:13px;margin-top:6px}.ck input{width:auto}
+.it{display:grid;grid-template-columns:1fr 80px auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd);font-size:13px}.it small{display:block;color:var(--mu)}
+.pr{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-bottom:8px}.pr input{padding:4px}
+.mu{color:var(--mu);font-size:12px}.ln{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:6px}.ln input{width:56px}
+.pvw{overflow-x:auto}
+.pg{background:#fff;color:#000;width:210mm;min-height:297mm;padding:12mm;margin:0 auto 14px;box-shadow:0 1px 8px rgba(0,0,0,.25);font-size:12px;line-height:1.5}
+.pg table{border-collapse:collapse;width:100%}.pg td,.pg th{border:1px solid #333;padding:2px 5px}.pg th{background:#eee}
+.n{text-align:right}.pg h1{text-align:center;letter-spacing:.5em;margin:0 0 8px;font-size:22px}
+.hd{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px}.hd>div{flex:1}
+.tt{border:2px solid #000;padding:4px 8px;font-size:16px;font-weight:bold;margin:6px 0}
+@page{size:A4;margin:0}
+@media print{.no{display:none!important}:root{padding:0}body{background:#fff}.wrap{display:block;padding:0}.pg{box-shadow:none;margin:0;page-break-after:always}}
+</style></head><body>
+<div class="wrap"><div class="no" id="side"></div><div class="pvw" id="pv"></div></div>
+<script>
+const API='https://script.google.com/macros/s/XXXXXXXX/exec'; // ← GASのウェブアプリURLに置換
+(async()=>{
+if(!API.startsWith('https://script.google.com/macros/s/')||API.includes('XXXX')){document.body.textContent='index.html の API にGASのウェブアプリURLを設定してください';return}
+let TOKEN=localStorage.getItem('mt')||prompt('アクセスキーを入力してください')||'';
+const call=async r=>{const j=await(await r).json();if(j.error)throw new Error(j.error);return j},
+ api=(a,q={})=>call(fetch(API+'?'+new URLSearchParams({action:a,token:TOKEN,...q}))),
+ post=b=>call(fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({token:TOKEN,...b})}));
+let D;try{D=await api('master')}catch(x){localStorage.removeItem('mt');document.body.textContent='読み込み失敗：'+x.message+'（再読み込みしてキーを入力し直してください）';return}
+localStorage.setItem('mt',TOKEN);
+const $=s=>document.querySelector(s),yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP'),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='mitsumori:v1',lab=a=>(a[0]?a[0]+' ':'')+a[1]+' '+a[2];
+
+const fresh=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0'),t=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+ return{no:t.replace(/-/g,''),date:t,to:'',title:'',dest:'',deliv:'お打ち合わせによる',valid:'２週間',terms:'お打ち合わせによる',staff:'',notes:'',shikiri:false,nE:3,nG:5,E:[],G:[],P:[],area:0,trips:2,fu:true,ke:true,cm:true,hc:3000,gl:40,gp:25,oc:0}};
+let S=fresh();
+const F=[['no','見積No.'],['date','日付','date'],['to','宛先（御中）'],['title','見積件名'],['dest','納入先'],['valid','有効期限'],['deliv','受渡期日'],['terms','取引条件'],['staff','担当者']];
+const pk=(k,t)=>`<h3>作業費（${t}）</h3><div class="ln">最初の<input type="number" min="0" data-k="n${k}" data-num>件は満額、以降は50%</div><input list="dl${k}" data-p="${k}" placeholder="作業を検索して追加…"><datalist id="dl${k}">${D[k].map(a=>`<option value="${esc(lab(a))}">`).join('')}</datalist><div id="l${k}"></div>`;
+$('#side').innerHTML=`<div class="card"><div class="tb"><select id="ld"></select><button id="sv">保存</button><button id="dl">削除</button><button id="nw">新規</button><button id="prt" class="pri">印刷 / PDF</button></div></div><div class="card" id="gp"></div>
+<div class="card"><h2>基本情報</h2><div class="g2">${F.map(([k,l,t])=>`<label>${l}<input data-k="${k}" type="${t||'text'}"></label>`).join('')}</div><label>特記事項<textarea data-k="notes" rows="3"></textarea></label></div>
+<div class="card"><h2>原価・価格設定</h2><label class="ck"><input type="checkbox" data-c="cm">原価から売価を算出（オフ＝価格表の定価）</label><div class="g2"><label>作業 原価時間単価（円/人・h）<input type="number" min="0" data-k="hc" data-num></label><label>作業 目標粗利率（%）<input type="number" min="0" max="99" data-k="gl" data-num></label><label>部品 目標粗利率（%）<input type="number" min="0" max="99" data-k="gp" data-num></label><label>その他原価（出張・法定福利・外注等）<input type="number" min="0" data-k="oc" data-num></label></div></div><div class="card"><h2>作業費</h2><label class="ck"><input type="checkbox" data-c="shikiri">仕切価格を適用（定価の80%・原価モードでは無効）</label>${pk('E','EHP')}${pk('G','GHP')}</div>
+<div class="card"><h2>部品・部材</h2><div id="pl"></div><button id="ap">＋ 行を追加</button></div>
+<div class="card"><h2>諸経費</h2><label>出張料エリア<select data-k="area" data-num>${D.T.map((t,i)=>`<option value="${i}">${esc(t[0])} ¥${t[1].toLocaleString()}</option>`).join('')}</select></label><label>出張回数<input type="number" min="0" data-k="trips" data-num></label><label class="ck"><input type="checkbox" data-c="fu">法定福利費（EHP作業費×40%×16.05%）</label><label class="ck"><input type="checkbox" data-c="ke">諸経費（作業費＋部品の10%）</label></div>`;
+function ln(k,n){return S[k].map((x,j)=>{const a=D[k][x.i],sh=S.shikiri&&!S.cm,u=(S.cm?a[3]/6000*S.hc/(1-S.gl/100):a[3]*(sh?.8:1))*(j>=n?.5:1),nt=[sh?'仕切80%':'',j>=n?'50%適用':''].filter(Boolean).join('・');return{name:a[1]+' '+a[2],spec:a[0],q:x.q,unit:'件',u,amt:Math.round(u*x.q),note:nt,w:a[3]/6000*x.q}})}
+function calc(){const E=ln('E',S.nE),G=ln('G',S.nG),P=S.P.filter(r=>r.n).map(r=>{const c=+r.c||0,u=+r.p||(S.cm&&c?Math.round(c/(1-S.gp/100)):0),q=+r.q||0;return{name:r.n,spec:r.s,q,unit:r.u,u,amt:u*q,cost:c*q}}),sum=a=>a.reduce((t,r)=>t+r.amt,0);
+ const e=sum(E),g=sum(G),p=sum(P),[al,ap]=D.T[S.area],tr=ap*S.trips,fu=S.fu?Math.floor(e*.4*.1605):0,ke=S.ke?Math.floor((e+g+p)*.1):0,sub=e+g+p+tr+fu+ke,tax=Math.floor(sub*.1);
+ const X=[{name:'出張料',spec:al,q:S.trips,unit:'回',u:ap,amt:tr},{name:'法定福利費',spec:'EHP作業費×40%×16.05%',q:1,unit:'式',u:fu,amt:fu},{name:'諸経費',spec:'（作業費＋部品）×10%',q:1,unit:'式',u:ke,amt:ke}].filter(r=>r.amt);
+ const wk=[...E,...G].reduce((t,r)=>t+r.w,0),cl=wk*S.hc,pc=P.reduce((t,r)=>t+r.cost,0),cost=cl+pc+(+S.oc||0);return{E,G,P,X,e,g,p,x:tr+fu+ke,sub,tax,tot:sub+tax,wk,cl,pc,cost}}
+const head='<tr><th>品名</th><th>仕様・規格</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th><th>備考</th></tr>',
+ pad=n=>('<tr>'+'<td>&nbsp;</td>'.repeat(7)+'</tr>').repeat(Math.max(0,n)),
+ tr=r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.spec)}</td><td class="n">${r.q}</td><td>${esc(r.unit)}</td><td class="n">${Math.round(r.u).toLocaleString()}</td><td class="n">${Math.round(r.amt).toLocaleString()}</td><td>${esc(r.note)}</td></tr>`,
+ tbl=(t,rows,tot,pn)=>`<div class="pg"><h1 style="font-size:18px">内 訳 明 細 書</h1><p>見積No. ${esc(S.no)}　【${t}】　P-${pn}</p><table>${head}${rows.map(tr).join('')}${pad(16-rows.length)}<tr><td colspan="5" class="n"><b>合計</b></td><td class="n"><b>${yen(tot)}</b></td><td></td></tr></table></div>`;
+function pv(){const c=calc(),sm=[['作業費(EHP)',c.e],['作業費(GHP)',c.g],['部品・部材',c.p],['諸経費',c.x]].filter(x=>x[1]).map(([n,a])=>({name:'【'+n+'】',spec:'',q:1,unit:'式',u:a,amt:a}));
+ let pn=2,h=`<div class="pg"><h1>御 見 積 書</h1><div class="hd"><div>見積No. ${esc(S.no)}<br><b style="font-size:16px">${esc(S.to)||'　　　　　'} 御中</b><p>下記の通りお見積り申し上げます。</p></div><div style="text-align:right">${esc(S.date)}<br><b>シオンテクノス株式会社</b><br>〒065-0024<br>札幌市東区北24条東４丁目1-1<br>TEL.011-751-8686　FAX.011-702-0070<br>E-mail. zion@zion.co.jp</div></div>
+<table style="margin-bottom:6px">${[['見積件名',S.title],['納入先',S.dest],['有効期限',S.valid],['受渡期日',S.deliv],['取引条件',S.terms],['担当者',S.staff]].map(([a,b])=>`<tr><th style="width:80px">${a}</th><td>${esc(b)}</td></tr>`).join('')}</table>
+<div class="tt">税込合計額：${yen(c.tot)}　<span style="font-size:12px;font-weight:normal">（税抜 ${yen(c.sub)} ／ 消費税 ${yen(c.tax)}）</span></div>
+<table>${head}${sm.map(tr).join('')}${pad(10-sm.length)}</table><p style="white-space:pre-wrap"><b>特記事項</b>
+${esc(S.notes)}</p></div>`;
+ if(c.E.length)h+=tbl('作業費(EHP)',c.E,c.e,pn++);if(c.G.length)h+=tbl('作業費(GHP)',c.G,c.g,pn++);if(c.P.length)h+=tbl('部品・部材',c.P,c.p,pn++);if(c.X.length)h+=tbl('諸経費',c.X,c.x,pn++);
+ $('#pv').innerHTML=h;const gp=c.sub-c.cost,r=c.sub?gp/c.sub*100:0;$('#gp').innerHTML=`<h2>原価・粗利（社内用・印刷されません）</h2><table style="width:100%;font-size:13px"><tr><td>売上（税抜）</td><td class="n">${yen(c.sub)}</td></tr><tr><td>作業原価（${c.wk.toFixed(1)}人・h）</td><td class="n">${yen(c.cl)}</td></tr><tr><td>部品原価</td><td class="n">${yen(c.pc)}</td></tr><tr><td>その他原価</td><td class="n">${yen(S.oc||0)}</td></tr><tr><td><b>粗利</b></td><td class="n"><b>${yen(gp)}（${r.toFixed(1)}%）</b></td></tr></table>`}
+function lists(){['E','G'].forEach(k=>$('#l'+k).innerHTML=S[k].map((x,i)=>`<div class="it"><span>${esc(lab(D[k][x.i]))}<small>定価 ${yen(D[k][x.i][3])}・工数 ${(D[k][x.i][3]/6000).toFixed(1)}人h</small></span><input type="number" min="0" step="any" value="${x.q}" data-g="${k}" data-i="${i}"><button data-rm="${k}" data-i="${i}">×</button></div>`).join('')||'<p class="mu">未選択</p>');
+ const ph={n:'品名',s:'仕様・規格',q:'数量',u:'単位',c:'原価単価',p:'売単価(空=自動)'},sp={n:5,s:5,q:3,u:2,c:4,p:3};
+ $('#pl').innerHTML=S.P.map((r,i)=>`<div class="pr">${Object.keys(ph).map(f=>`<input style="grid-column:span ${sp[f]}" data-pi="${i}" data-f="${f}" value="${esc(r[f])}" placeholder="${ph[f]}"${'qcp'.includes(f)?' type="number" step="any"':''}>`).join('')}<button style="grid-row:1;grid-column:11/13" data-rm="P" data-i="${i}">×</button></div>`).join('');pv()}
+const opts=async()=>{let L=[];try{L=await api('list')}catch{}$('#ld').innerHTML='<option value="">保存済みを開く…</option>'+L.map(r=>`<option value="${esc(r.no)}">${esc(r.no+' '+r.to+' '+r.title)}</option>`).join('')};
+function sync(){document.querySelectorAll('[data-k]').forEach(el=>el.value=S[el.dataset.k]);document.querySelectorAll('[data-c]').forEach(el=>el.checked=S[el.dataset.c]);lists();opts()}
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
+ if(d.k)S[d.k]=d.num!==undefined?+t.value:t.value;else if(d.c)S[d.c]=t.checked;else if(d.pi)S.P[d.pi][d.f]=t.value;else if(d.g)S[d.g][d.i].q=+t.value||0;else return;pv()});
+document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id=='ld'&&t.value!==''){try{S={...fresh(),...(await api('get',{no:t.value}))};sync()}catch(x){alert(x.message)}}
+ else if(t.dataset.p){const k=t.dataset.p,i=D[k].findIndex(a=>lab(a)===t.value);if(i>=0){S[k].push({i,q:1});lists()}t.value=''}});
+document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(d.rm){S[d.rm].splice(+d.i,1);lists()}
+ else if(t.id=='ap'){S.P.push({n:'',s:'',q:1,u:'個',c:'',p:''});lists()}
+ else if(t.id=='prt')window.print();
+ else if(t.id=='nw'){S=fresh();try{S.no=(await api('nextno')).no}catch{}sync()}
+ else if(t.id=='sv'){try{await post({action:'save',no:S.no,to:S.to,title:S.title,total:calc().tot,data:S});t.textContent='保存しました ✓'}catch(x){t.textContent='保存失敗';alert(x.message)}setTimeout(()=>t.textContent='保存',1500);opts()}
+ else if(t.id=='dl'){const v=$('#ld').value;if(v!==''&&confirm(v+' を削除しますか？')){try{await post({action:'delete',no:v})}catch(x){alert(x.message)}opts()}}});
+sync();try{S.no=(await api('nextno')).no;sync()}catch{}
+})();
+</script></body></html>
