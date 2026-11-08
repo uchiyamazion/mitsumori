@@ -32,7 +32,7 @@ label{display:block;font-size:12px;color:var(--mu)}label input,label textarea,la
 </style></head><body>
 <div class="wrap"><div class="no" id="side"></div><div class="pvw" id="pv"></div></div>
 <script>
-const API='https://script.google.com/macros/s/XXXXXXXX/exec'; // ← GASのウェブアプリURLに置換
+const API='https://script.google.com/macros/s/AKfycbwrO-GTXpe5ayHyFG4oEyDZdpOtue_5RrEgn-038y7j2cVCyHhi7-AVNNW91X8coSBz/exec'; // ← GASのウェブアプリURLに置換
 (async()=>{
 if(!API.startsWith('https://script.google.com/macros/s/')||API.includes('XXXX')){document.body.textContent='index.html の API にGASのウェブアプリURLを設定してください';return}
 let TOKEN=localStorage.getItem('mt')||prompt('アクセスキーを入力してください')||'';
